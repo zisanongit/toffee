@@ -117,7 +117,8 @@ def fetch_signed_token_from_toffee_official_api(ch):
     headers["X-Device-Id"] = device_id
     headers["X-Session-Token"] = device_id
     
-    direct_url = f"https://prod-linear-media.toffeelive.com/cdn/live/{slug}/playlist.m3u8"
+    direct_path = f"cdn/live/{slug}/playlist.m3u8"
+    direct_url = f"https://prod-linear-media.toffeelive.com/{direct_path}"
     try:
         session = requests.Session()
         res = session.get(direct_url, headers=headers, allow_redirects=True, timeout=10)
