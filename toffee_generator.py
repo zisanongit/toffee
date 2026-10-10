@@ -5,7 +5,7 @@ import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 # Toffee Official Android Media3 API Headers
-TOFFEE_API_HEADERS = {
+TOFFEE_HEADERS = {
     "User-Agent": "Toffee (Linux;Android 14) AndroidXMedia3/1.1.1/64100410/4d2ec9b8c3502383",
     "Origin": "https://toffeelive.com",
     "Referer": "https://toffeelive.com/",
@@ -66,7 +66,7 @@ CHANNELS = [
     {"slug": "sonyaath", "name": "Sony Aath", "group": "Drama", "logo": "https://assets-prod.services.toffeelive.com/xi6xX5UBv9knK3AH9aMk/posters/f4db1c12-b10f-46e8-a09b-e0efb8820970.png"},
     {"slug": "sonyentertainmnt_hd", "name": "Sony Entertainment Television HD", "group": "Family", "logo": "https://assets-prod.services.toffeelive.com/-y50-JQBv9knK3AHLzSn/posters/0ab48ac0-ec84-4ca2-9601-746ff3cb809e.webp"},
     {"slug": "sony_entertainment", "name": "Sony Entertainment Television", "group": "Family", "logo": "https://assets-prod.services.toffeelive.com/2S5t-JQBv9knK3AHJTTW/posters/ae74f943-77c9-4395-a16c-8ed84b439080.webp"},
-    {"id": "b4u_music", "slug": "b4u_music", "name": "B4U Music", "group": "Musical", "logo": "https://assets-prod.services.toffeelive.com/PS6F-JQBv9knK3AHqjVz/posters/0f83ee72-be0f-4861-94df-30b158d3df8d.webp"},
+    {"slug": "b4u_music", "name": "B4U Music", "group": "Musical", "logo": "https://assets-prod.services.toffeelive.com/PS6F-JQBv9knK3AHqjVz/posters/0f83ee72-be0f-4861-94df-30b158d3df8d.webp"},
     {"slug": "sonysab_hd", "name": "Sony SAB HD", "group": "Family", "logo": "https://assets-prod.services.toffeelive.com/ES55-JQBv9knK3AHNDWC/posters/13411be9-62b9-4a99-a062-b6e91dfb1099.webp"},
     {"slug": "zee_tv_hd", "name": "Zee TV HD", "group": "Drama", "logo": "https://assets-prod.services.toffeelive.com/ltPQX5UBm1RY_In7b3F1/posters/d039d9df-9877-4969-a0b6-56888ebe2385.png"},
     {"slug": "sony_max_hd", "name": "Sony MAX HD", "group": "Movies", "logo": "https://assets-prod.services.toffeelive.com/Ai51-JQBv9knK3AH_jWs/posters/663e52a6-1a9f-4458-b4aa-7c03d84972f1.webp"},
@@ -93,14 +93,41 @@ CHANNELS = [
     {"slug": "andpicture_hd", "name": "& Pictures HD", "group": "Movies", "logo": "https://assets-prod.services.toffeelive.com/QMwWnZUBtpl-Sbt7S2sx/posters/8cad9a82-842a-47bf-a060-f17011f11c07.png"}
 ]
 
-# ১. সরাসরি টুফির অফিশিয়াল এপিআই দিয়ে সেসন জেনারেট
-def fetch_signed_token_from_toffee_official_api(ch):
-    slug = ch["slug"]
+# ১. টুফির অফিশিয়াল গেস্ট সেসন রেজিস্ট্রেশন (Official Guest Session Handshake)
+def register_toffee_official_guest_session():
+    device_id = str(uuid.uuid4())
+    session_url = "https://api.toffeelive.com/v1/user/guest-login"
+    payload = {"device_id": device_id, "platform": "android"}
     
-    # Method A: Toffee Web Channel Stream Gateway
+    headers = dict(TOFFEE_HEADERS)
+    headers["X-Device-Id"] = device_id
+    
+    try:
+        res = requests.post(session_url, headers=headers, json=payload, timeout=10)
+        if res.ok:
+            data = res.json()
+            if isinstance(data, dict):
+                if "data" in data and "token" in data["data"]:
+                    return device_id, data["data"]["token"]
+                elif "token" in data:
+                    return device_id, data["token"]
+    except Exception as e:
+        print(f"Guest session error: {e}")
+    return device_id, None
+
+# ২. রেজিস্ট্রেশন টোকেন দিয়ে টুফি অফিশিয়াল এপিআই থেকে তাজা সাইন করা টোকেন লিংক তুলে আনা
+def fetch_signed_token_from_toffee(ch, device_id, session_token):
+    slug = ch["slug"]
+    headers = dict(TOFFEE_HEADERS)
+    headers["X-Device-Id"] = device_id
+    if session_token:
+        headers["X-Session-Token"] = session_token
+        headers["Authorization"] = f"Bearer {session_token}"
+
+    # Method A: Toffee Official Web/App Channel Stream Endpoint
     api_url = f"https://toffeelive.com/api/v1/channel/{slug}"
     try:
-        res = requests.get(api_url, headers=TOFFEE_API_HEADERS, timeout=10)
+        res = requests.get(api_url, headers=headers, timeout=10)
         if res.ok:
             data = res.json()
             if isinstance(data, dict):
@@ -111,14 +138,8 @@ def fetch_signed_token_from_toffee_official_api(ch):
     except Exception as e:
         pass
 
-    # Method B: Direct Official CDN Session Exchange
-    device_id = str(uuid.uuid4())
-    headers = dict(TOFFEE_API_HEADERS)
-    headers["X-Device-Id"] = device_id
-    headers["X-Session-Token"] = device_id
-    
-    direct_path = f"cdn/live/{slug}/playlist.m3u8"
-    direct_url = f"https://prod-linear-media.toffeelive.com/{direct_path}"
+    # Method B: Direct Session Redirect Exchange
+    direct_url = f"https://prod-linear-media.toffeelive.com/cdn/live/{slug}/playlist.m3u8"
     try:
         session = requests.Session()
         res = session.get(direct_url, headers=headers, allow_redirects=True, timeout=10)
@@ -129,28 +150,34 @@ def fetch_signed_token_from_toffee_official_api(ch):
 
     return direct_url
 
-def process_channel(ch):
-    token_url = fetch_signed_token_from_toffee_official_api(ch)
+def process_channel_with_session(args):
+    ch, device_id, session_token = args
+    token_url = fetch_signed_token_from_toffee(ch, device_id, session_token)
     extinf = f'#EXTINF:-1 group-title="{ch["group"]}" tvg-logo="{ch["logo"]}",{ch["name"]}'
     return f"{extinf}\n{token_url}"
 
 def main():
-    print("Generating fresh signed Toffee tokens directly from Toffee Official Web API using 15 threads...")
-    
+    print("Registering Official Toffee Guest Session...")
+    device_id, session_token = register_toffee_official_guest_session()
+    print(f"Session Registered Successfully! Device ID: {device_id}")
+
+    print("Generating fresh signed Toffee tokens using 15 threads...")
     bd_time = datetime.datetime.utcnow() + datetime.timedelta(hours=6)
     time_str = bd_time.strftime("%I:%M:%S %p %d-%m-%Y (BD Time)")
 
     m3u_lines = [
         "#EXTM3U",
         "#=================================",
-        "# Generated Natively from Toffee Official API",
+        "# Generated Natively from Toffee Official Session API",
         f"# Last Updated: {time_str}",
         f"# Total Channels: {len(CHANNELS)}",
         "#================================="
     ]
 
+    tasks = [(ch, device_id, session_token) for ch in CHANNELS]
+
     with ThreadPoolExecutor(max_workers=15) as executor:
-        results = list(executor.map(process_channel, CHANNELS))
+        results = list(executor.map(process_channel_with_session, tasks))
 
     m3u_lines.extend(results)
     playlist_content = "\n".join(m3u_lines)
