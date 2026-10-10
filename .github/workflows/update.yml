@@ -5,15 +5,19 @@ on:
     - cron: '0 * * * *' # প্রতি ১ ঘণ্টা পর পর অটোমেটিক পাইথন ফাইল রান হবে
   workflow_dispatch:
 
+# REQUIRED: গিটহাবে পুশ করার জন্য রাইট পারমিশন অন করা হলো
+permissions:
+  contents: write
+
 jobs:
   build-playlist:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
@@ -28,5 +32,9 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add playlist.m3u
-          git commit -m "Auto-generated fresh Toffee stream tokens" || exit 0
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes in playlist.m3u to commit."
+          else
+            git commit -m "Auto-updated fresh Toffee stream tokens"
+            git push
+          fi
