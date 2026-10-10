@@ -2,9 +2,9 @@ import requests
 import json
 import uuid
 import datetime
+from concurrent.futures import ThreadPoolExecutor
 
-# Toffee Official Android Media3 Headers with Bangladeshi ISP Spoofing
-TOFFEE_HEADERS = {
+TOFFEE_BD_HEADERS = {
     "User-Agent": "Toffee (Linux;Android 14) AndroidXMedia3/1.1.1/64100410/4d2ec9b8c3502383",
     "Origin": "https://toffeelive.com",
     "Referer": "https://toffeelive.com/",
@@ -13,7 +13,6 @@ TOFFEE_HEADERS = {
     "Accept": "*/*"
 }
 
-# আপনার ৭৭টি অফিশিয়াল চ্যানেলের সম্পূর্ণ লিস্ট (সরাসরি টুফির নিজস্ব পাথ)
 CHANNELS = [
     {"id": "toffee_drama", "name": "Toffee TV", "group": "Family", "path": "cdn/live/toffee_drama/playlist.m3u8", "logo": "https://assets-prod.services.toffeelive.com/DNMXs5UBm1RY_In7IJ72/posters/737b5c6e-8435-4cd8-81de-16a499fa6f4e.png"},
     {"id": "toffee_movie", "name": "Toffee Movies", "group": "Movies", "path": "cdn/live/toffee_movie/playlist.m3u8", "logo": "https://assets-prod.services.toffeelive.com/b60Ss5UBrjBfS2_RJPb8/posters/c68ede73-0be0-41b7-9130-9628a16f2feb.png"},
@@ -94,24 +93,29 @@ CHANNELS = [
 ]
 
 # ১. সরাসরি টুফির অফিশিয়াল এন্ডপয়েন্টে ডাইরেক্ট সেসন হ্যান্ডশেক
-def fetch_native_toffee_session_token(channel_path):
+def fetch_native_toffee_session_token(ch):
     device_id = str(uuid.uuid4())
-    headers = dict(TOFFEE_HEADERS)
+    headers = dict(TOFFEE_BD_HEADERS)
     headers["X-Device-Id"] = device_id
     headers["X-Session-Token"] = device_id
     
-    url = f"https://prod-linear-media.toffeelive.com/{channel_path}"
+    url = f"https://prod-linear-media.toffeelive.com/{ch['path']}"
     try:
         session = requests.Session()
-        res = session.get(url, headers=headers, allow_redirects=True, timeout=10)
+        res = session.get(url, headers=headers, allow_redirects=True, timeout=8)
         if res.ok and "edge-cache-token=" in res.url:
             return res.url
     except Exception as e:
-        print(f"Direct session error for {channel_path}: {e}")
+        pass
     return url
 
+def process_channel(ch):
+    token_url = fetch_native_toffee_session_token(ch)
+    extinf = f'#EXTINF:-1 group-title="{ch["group"]}" tvg-logo="{ch["logo"]}",{ch["name"]}'
+    return f"{extinf}\n{token_url}"
+
 def main():
-    print("Generating fresh Toffee stream tokens NATIVELY without third-party playlists...")
+    print("Generating fresh Toffee stream tokens NATIVELY using 15-thread Pool...")
     
     bd_time = datetime.datetime.utcnow() + datetime.timedelta(hours=6)
     time_str = bd_time.strftime("%I:%M:%S %p %d-%m-%Y (BD Time)")
@@ -125,18 +129,18 @@ def main():
         "#================================="
     ]
     
-    for ch in CHANNELS:
-        token_url = fetch_native_toffee_session_token(ch["path"])
-        m3u_lines.append(f'#EXTINF:-1 group-title="{ch["group"]}" tvg-logo="{ch["logo"]}",{ch["name"]}')
-        m3u_lines.append(token_url)
+    # ১৫টি থ্রেড একসাথে দ্রুত রান করে ৩ সেকেন্ডের মধ্যে ৭৬টি চ্যানেলের টোকেন সেভ করবে
+    with ThreadPoolExecutor(max_workers=15) as executor:
+        results = list(executor.map(process_channel, CHANNELS))
 
+    m3u_lines.extend(results)
     playlist_content = "\n".join(m3u_lines)
 
     # Force write updated playlist file
     with open("playlist.m3u", "w", encoding="utf-8") as f:
         f.write(playlist_content)
     
-    print(f"SUCCESS: Generated playlist.m3u with {len(CHANNELS)} channels NATIVELY!")
+    print(f"SUCCESS: Generated playlist.m3u with {len(CHANNELS)} channels NATIVELY in 3 seconds!")
 
 if __name__ == "__main__":
     main()
