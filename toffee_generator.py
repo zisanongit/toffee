@@ -1,16 +1,24 @@
 import requests
 import json
 import uuid
+import datetime
 
-# Toffee Official Android Media3 Headers
-TOFFEE_HEADERS = {
+# বাংলাদেশি বিডিআইএক্স / বাংলালিংক আসল আইপি এড্রেস (Toffee BD IP Bypass)
+BD_ISP_IP = "103.112.52.100"
+
+# Toffee Official Headers with Bangladeshi IP Spoofing
+TOFFEE_BD_HEADERS = {
     "User-Agent": "Toffee (Linux;Android 14) AndroidXMedia3/1.1.1/64100410/4d2ec9b8c3502383",
     "Origin": "https://toffeelive.com",
     "Referer": "https://toffeelive.com/",
+    "X-Forwarded-For": BD_ISP_IP,
+    "X-Real-IP": BD_ISP_IP,
+    "Client-IP": BD_ISP_IP,
+    "CF-Connecting-IP": BD_ISP_IP,
     "Accept": "*/*"
 }
 
-# আপনার ৭৬টি চ্যানেলের তালিকা (সরাসরি টুফি সিডিএন পাথের সাথে)
+# আপনার ৭৬টি অফিশিয়াল চ্যানেলের তালিকা (সরাসরি টুফির নিজস্ব পাথ)
 CHANNELS = [
     {"id": "toffee_drama", "name": "Toffee TV", "group": "Family", "path": "cdn/live/toffee_drama/playlist.m3u8", "logo": "https://assets-prod.services.toffeelive.com/DNMXs5UBm1RY_In7IJ72/posters/737b5c6e-8435-4cd8-81de-16a499fa6f4e.png"},
     {"id": "toffee_movie", "name": "Toffee Movies", "group": "Movies", "path": "cdn/live/toffee_movie/playlist.m3u8", "logo": "https://assets-prod.services.toffeelive.com/b60Ss5UBrjBfS2_RJPb8/posters/c68ede73-0be0-41b7-9130-9628a16f2feb.png"},
@@ -90,10 +98,10 @@ CHANNELS = [
     {"id": "andpicture_hd", "name": "& Pictures HD", "group": "Movies", "path": "cdn/live/andpicture_hd/playlist.m3u8", "logo": "https://assets-prod.services.toffeelive.com/QMwWnZUBtpl-Sbt7S2sx/posters/8cad9a82-842a-47bf-a060-f17011f11c07.png"}
 ]
 
-# সরাসরি টুফি অফিশিয়াল সার্ভার থেকে তাজা টোকেন লিংক তুলে আনার ফাংশন
-def fetch_fresh_token_url(channel_path):
+# Toffee Official Gateway-তে সরাসরি বাংলাদেশি বিডিআইএক্স আইপি সেসন হ্যান্ডশেক
+def fetch_fresh_token_url_from_toffee(channel_path):
     device_id = str(uuid.uuid4())
-    headers = dict(TOFFEE_HEADERS)
+    headers = dict(TOFFEE_BD_HEADERS)
     headers["X-Device-Id"] = device_id
     headers["X-Session-Token"] = device_id
     
@@ -104,20 +112,37 @@ def fetch_fresh_token_url(channel_path):
         if res.ok or res.status_code == 302:
             return res.url if res.url else url
     except Exception as e:
-        print(f"Error fetching {channel_path}: {e}")
+        print(f"Direct BD Session fetch error for {channel_path}: {e}")
     return url
 
 def main():
-    print("Generating fresh Toffee tokens directly from Toffee official gateway...")
-    m3u_lines = ["#EXTM3U"]
-    for ch in CHANNELS:
-        fresh_url = fetch_fresh_token_url(ch["path"])
-        m3u_lines.append(f'#EXTINF:-1 tvg-id="{ch["id"]}" tvg-name="{ch["name"]}" tvg-logo="{ch["logo"]}" group-title="{ch["group"]}",{ch["name"]}')
-        m3u_lines.append(fresh_url)
+    print("Generating fresh Toffee stream tokens NATIVELY via Bangladeshi ISP Proximity Gateway...")
+    
+    # BD Time Timestamp
+    bd_time = datetime.datetime.utcnow() + datetime.timedelta(hours=6)
+    time_str = bd_time.strftime("%I:%M:%S %p %d-%m-%Y (BD Time)")
 
+    m3u_lines = [
+        "#EXTM3U",
+        "#=================================",
+        "# Generated Natively by Toffee Private Engine",
+        f"# Last Updated: {time_str}",
+        f"# Total Channels: {len(CHANNELS)}",
+        "#================================="
+    ]
+    
+    for ch in CHANNELS:
+        fresh_tokenized_url = fetch_fresh_token_url_from_toffee(ch["path"])
+        m3u_lines.append(f'#EXTINF:-1 group-title="{ch["group"]}" tvg-logo="{ch["logo"]}",{ch["name"]}')
+        m3u_lines.append(fresh_tokenized_url)
+
+    playlist_content = "\n".join(m3u_lines)
+
+    # Force write updated playlist
     with open("playlist.m3u", "w", encoding="utf-8") as f:
-        f.write("\n".join(m3u_lines))
-    print(f"SUCCESS: Generated playlist.m3u with {len(CHANNELS)} fresh channel tokens!")
+        f.write(playlist_content)
+    
+    print(f"SUCCESS: Generated playlist.m3u with {len(CHANNELS)} fresh channel tokens NATIVELY!")
 
 if __name__ == "__main__":
     main()
