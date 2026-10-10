@@ -2,10 +2,9 @@ name: Hourly Toffee Token Generator
 
 on:
   schedule:
-    - cron: '0 * * * *' # প্রতি ১ ঘণ্টা পর পর অটোমেটিক পাইথন ফাইল রান হবে
+    - cron: '0 * * * *'
   workflow_dispatch:
 
-# REQUIRED: গিটহাবে পুশ করার জন্য রাইট পারমিশন অন করা হলো
 permissions:
   contents: write
 
@@ -21,20 +20,14 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install Dependencies
+      - name: Install Python Dependencies
         run: pip install requests
 
       - name: Run Toffee Token Generator
         run: python toffee_generator.py
 
-      - name: Commit and Push Updated Playlist
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add playlist.m3u
-          if git diff --staged --quiet; then
-            echo "No changes in playlist.m3u to commit."
-          else
-            git commit -m "Auto-updated fresh Toffee stream tokens"
-            git push
-          fi
+      - name: Auto Commit and Push Playlist
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-updated fresh Toffee stream tokens"
+          file_pattern: "playlist.m3u"
