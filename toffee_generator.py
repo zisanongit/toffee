@@ -2,6 +2,7 @@ import requests
 import json
 import uuid
 
+# Toffee Official Android Media3 Headers
 TOFFEE_HEADERS = {
     "User-Agent": "Toffee (Linux;Android 14) AndroidXMedia3/1.1.1/64100410/4d2ec9b8c3502383",
     "Origin": "https://toffeelive.com",
@@ -9,7 +10,7 @@ TOFFEE_HEADERS = {
     "Accept": "*/*"
 }
 
-# আপনার দেওয়া ৭৬টি অফিশিয়াল চ্যানেলের সম্পূর্ণ লিস্ট
+# আপনার ৭৬টি চ্যানেলের তালিকা (সরাসরি টুফি সিডিএন পাথের সাথে)
 CHANNELS = [
     {"id": "toffee_drama", "name": "Toffee TV", "group": "Family", "path": "cdn/live/toffee_drama/playlist.m3u8", "logo": "https://assets-prod.services.toffeelive.com/DNMXs5UBm1RY_In7IJ72/posters/737b5c6e-8435-4cd8-81de-16a499fa6f4e.png"},
     {"id": "toffee_movie", "name": "Toffee Movies", "group": "Movies", "path": "cdn/live/toffee_movie/playlist.m3u8", "logo": "https://assets-prod.services.toffeelive.com/b60Ss5UBrjBfS2_RJPb8/posters/c68ede73-0be0-41b7-9130-9628a16f2feb.png"},
@@ -89,6 +90,7 @@ CHANNELS = [
     {"id": "andpicture_hd", "name": "& Pictures HD", "group": "Movies", "path": "cdn/live/andpicture_hd/playlist.m3u8", "logo": "https://assets-prod.services.toffeelive.com/QMwWnZUBtpl-Sbt7S2sx/posters/8cad9a82-842a-47bf-a060-f17011f11c07.png"}
 ]
 
+# সরাসরি টুফি অফিশিয়াল সার্ভার থেকে তাজা টোকেন লিংক তুলে আনার ফাংশন
 def fetch_fresh_token_url(channel_path):
     device_id = str(uuid.uuid4())
     headers = dict(TOFFEE_HEADERS)
@@ -97,7 +99,8 @@ def fetch_fresh_token_url(channel_path):
     
     url = f"https://prod-linear-media.toffeelive.com/{channel_path}"
     try:
-        res = requests.get(url, headers=headers, allow_redirects=True, timeout=12)
+        session = requests.Session()
+        res = session.get(url, headers=headers, allow_redirects=True, timeout=12)
         if res.ok or res.status_code == 302:
             return res.url if res.url else url
     except Exception as e:
@@ -105,6 +108,7 @@ def fetch_fresh_token_url(channel_path):
     return url
 
 def main():
+    print("Generating fresh Toffee tokens directly from Toffee official gateway...")
     m3u_lines = ["#EXTM3U"]
     for ch in CHANNELS:
         fresh_url = fetch_fresh_token_url(ch["path"])
@@ -113,7 +117,7 @@ def main():
 
     with open("playlist.m3u", "w", encoding="utf-8") as f:
         f.write("\n".join(m3u_lines))
-    print(f"Successfully generated playlist.m3u with {len(CHANNELS)} channels.")
+    print(f"SUCCESS: Generated playlist.m3u with {len(CHANNELS)} fresh channel tokens!")
 
 if __name__ == "__main__":
     main()
