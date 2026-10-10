@@ -1,7 +1,7 @@
 #EXTM3U
 #=================================
-# Generated Natively from Toffee Official API
-# Last Updated: 03:42:06 PM 10-10-2026 (BD Time)
+# Generated Natively from Toffee Official Session API
+# Last Updated: 09:05:06 PM 10-10-2026 (BD Time)
 # Total Channels: 76
 #=================================
 #EXTINF:-1 group-title="Family" tvg-logo="https://assets-prod.services.toffeelive.com/DNMXs5UBm1RY_In7IJ72/posters/737b5c6e-8435-4cd8-81de-16a499fa6f4e.png",Toffee TV
@@ -9,9 +9,9 @@ https://prod-linear-media.toffeelive.com/cdn/live/toffee_drama/playlist.m3u8
 #EXTINF:-1 group-title="Movies" tvg-logo="https://assets-prod.services.toffeelive.com/b60Ss5UBrjBfS2_RJPb8/posters/c68ede73-0be0-41b7-9130-9628a16f2feb.png",Toffee Movies
 https://prod-linear-media.toffeelive.com/cdn/live/toffee_movie/playlist.m3u8
 #EXTINF:-1 group-title="Live Action" tvg-logo="https://assets-prod.services.toffeelive.com/JS1AqZgBNnOkwJLWlwg-/posters/f030066c-0649-4d82-836f-c85321381d67.png",EPL channel 1
-https://prod-linear-media.toffeelive.com/cdn/live/EPL-26-27-CH-1/playlist.m3u8
+https://prod-linear-media.toffeelive.com/live/EPL-26-27-CH-1/index.m3u8
 #EXTINF:-1 group-title="Sports" tvg-logo="https://assets-prod.services.toffeelive.com/HHnAgJkBcqxnFHJBabwO/posters/967dd1fe-c2af-442e-a0b1-22320ed82c88.png",BFL | Live 1
-https://prod-linear-media.toffeelive.com/cdn/live/BFFL-1/playlist.m3u8
+https://prod-linear-media.toffeelive.com/live/BFFL-1/index.m3u8
 #EXTINF:-1 group-title="Sports" tvg-logo="https://assets-prod.services.toffeelive.com/V__o054BObUt2AG6LL5C/posters/84590b8d-6430-4ba8-a0a5-757bf2f57c05.png",WC Match Recap
 https://prod-linear-media.toffeelive.com/cdn/live/fifa_world_cup/playlist.m3u8
 #EXTINF:-1 group-title="Documentary" tvg-logo="https://assets-prod.services.toffeelive.com/VC6Q-JQBv9knK3AHhTXt/posters/63e79814-8fcf-4c3e-bb66-408b2a402613.webp",CNN
